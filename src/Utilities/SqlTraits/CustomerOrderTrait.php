@@ -27,6 +27,10 @@ trait CustomerOrderTrait {
 		if (   \get_option( \JtlConnectorAdmin::OPTIONS_COMPLETED_ORDERS, '1' ) === '1' ) {
 			$status .= ", 'wc-completed'";
 		}
+
+		if ( true ) { // @todo check for order approval plugin in the future
+			$status .= ", 'wc-approval-waiting', 'wc-approved', 'wc-rejected'";
+		}
 		
 		$since = \get_option( \JtlConnectorAdmin::OPTIONS_PULL_ORDERS_SINCE );
 		$where = ( ! empty( $since ) && strtotime( $since ) !== false ) ? "AND p.post_date > '{$since}'" : '';
