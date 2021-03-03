@@ -11,96 +11,65 @@ use JtlConnectorAdmin;
 use JtlWooCommerceConnector\Controllers\BaseController;
 use JtlWooCommerceConnector\Controllers\Traits\PullTrait;
 use JtlWooCommerceConnector\Controllers\Traits\PushTrait;
+use JtlWooCommerceConnector\Integrations\Plugins\Germanized\Germanized;
+use JtlWooCommerceConnector\Integrations\Plugins\GermanMarket\GermanMarket;
 use JtlWooCommerceConnector\Utilities\Config;
-use JtlWooCommerceConnector\Utilities\SupportedPlugins;
 
+/**
+ * Class GlobalData
+ * @package JtlWooCommerceConnector\Controllers\GlobalData
+ */
 class GlobalData extends BaseController
 {
     use PullTrait, PushTrait;
-    
+
+    /**
+     * @return array
+     * @throws \jtl\Connector\Core\Exception\LanguageException
+     */
     public function pullData()
     {
         $globalData = (new GlobalDataModel())
-            ->addCurrency((new Currency())->pullData())
-            ->addLanguage((new Language())->pullData())
+            ->setCurrencies((new Currency())->pullData())
+            ->setLanguages((new Language())->pullData())
             ->setProductTypes((new ProductType())->pullData())
             ->setShippingClasses((new ShippingClass())->pullData())
             ->setShippingMethods((new ShippingMethod())->pullData())
             ->setCrossSellingGroups((new CrossSellingGroups())->pullData())
             ->setTaxRates((new TaxRate())->pullData());
-        
+
+        $hasDefaultCustomerGroup = false;
         foreach ((new CustomerGroup)->pullData() as $group) {
+            /** @var $group \jtl\Connector\Model\CustomerGroup */
+            if($group->getIsDefault() === true){
+                $hasDefaultCustomerGroup = true;
+            }
             $globalData->addCustomerGroup($group);
         }
-        
-        if (Config::get(JtlConnectorAdmin::OPTIONS_AUTO_WOOCOMMERCE_OPTIONS)) {
-            //Wawi überträgt Netto
-            //   \update_option('woocommerce_prices_include_tax', 'no', true);
-            //Preise im Shop mit hinterlegter Steuer
-            // \update_option('woocommerce_tax_display_shop', 'incl', true);   //MOVED PROD PUSH
-            //Preise im Cart mit hinterlegter Steuer
-            //\update_option('woocommerce_tax_display_cart', 'incl', true);
-            
-            /*\update_option('woocommerce_dimension_unit', 'cm', true);
-            \update_option('woocommerce_weight_unit', 'kg', true);*/
+
+        if($hasDefaultCustomerGroup === false){
+            throw new \Exception(__("The default customer is not set. Please update the B2B-Market default customer group in the JTL-Connector settings in the Wordpress admin panel.", JTLWCC_TEXT_DOMAIN));
         }
-        
-        if (
-            (
-                SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZED)
-                || SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZED2)
-                || SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZEDPRO)
-            )
-            && !SupportedPlugins::isActive(SupportedPlugins::PLUGIN_GERMAN_MARKET)) {
+
+        if ($this->getPluginsManager()->get(Germanized::class)->canBeUsed() && !$this->getPluginsManager()->get(GermanMarket::class)->canBeUsed()) {
             $globalData->setMeasurementUnits((new MeasurementUnit)->pullGermanizedData());
         }
-        
-        if (SupportedPlugins::isActive(SupportedPlugins::PLUGIN_GERMAN_MARKET)
-            && !(
-                SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZED)
-                || SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZED2)
-                || SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZEDPRO)
-            )
-        ) {
-            if (Config::get(JtlConnectorAdmin::OPTIONS_AUTO_GERMAN_MARKET_OPTIONS)) {
-                //LIEFERZEITEN
-                update_option('woocommerce_global_lieferzeit', '-1', true);
-                //update_option('woocommerce_de_show_delivery_time_overview', 'off', true);
-                update_option('woocommerce_de_show_delivery_time_product_page', 'on', true);
-                update_option('woocommerce_de_show_delivery_time_checkout', 'on', true);
-                update_option('woocommerce_de_show_delivery_time_order_summary', 'on', true);
-                
-                //GM STREICHPREISE DISABLE
-                update_option('woocommerce_de_show_sale_label_overview', 'off', true);
-                update_option('woocommerce_de_show_sale_label_product_page', 'off', true);
-                
-                //PRODUKTE
-                update_option('german_market_attribute_in_product_name', 'off', true);
-                update_option('gm_show_product_attributes', 'off', true);
-                update_option('gm_show_single_price_of_order_items', 'on', true);
-                
-                update_option('german_market_product_images_in_order', 'on', true);
-                update_option('german_market_product_images_in_cart', 'on', true);
-                
-                update_option('gm_gtin_activation', 'on', true);
-                update_option('gm_gtin_product_pages', 'on', true);
-                
-                update_option('woocommerce_de_show_price_per_unit', 'on', true);
-                update_option('woocommerce_de_automatic_calculation_ppu', 'on', true);
-                update_option('woocommerce_de_automatic_calculation_use_wc_weight', 'off', true);
-                update_option('woocommerce_de_automatic_calculation_use_wc_weight_scale_unit', 'kg', true);
-                update_option('woocommerce_de_automatic_calculation_use_wc_weight_mult', '1', true);
-                
-                //Globale Optionen
-                update_option('wgm_use_split_tax', 'on', true);
-                update_option('gm_gross_shipping_costs_and_fees', 'off', true);
+
+        if ($this->getPluginsManager()->get(GermanMarket::class)->canBeUsed() && !$this->getPluginsManager()->get(Germanized::class)->canBeUsed()) {
+            if (Config::get(Config::OPTIONS_AUTO_GERMAN_MARKET_OPTIONS)) {
+                $this->getPluginsManager()->get(GermanMarket::class)->setAutoOptions();
             }
             $globalData->setMeasurementUnits((new MeasurementUnit)->pullGermanMarketData());
         }
         
         return [$globalData];
     }
-    
+
+    /**
+     * @param GlobalDataModel $data
+     * @return GlobalDataModel
+     * @throws \Exception
+     */
     public function pushData(GlobalDataModel $data)
     {
         (new Currency)->pushData($data->getCurrencies());

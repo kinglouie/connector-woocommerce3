@@ -2,11 +2,11 @@
 Contributors: papryk, ntbyk, chakratos, drieschel, messtech
 Tags: warenwirtschaft, jtl, connector, wms, erp, woocommerce
 Requires at least: 4.7
-Tested up to: 5.2
-Requires PHP: 5.6.4
+Tested up to: 5.6
+Requires PHP: 7.1.3
 WC requires at least: 3.4
-WC tested up to: 3.6
-Stable tag: 1.8.4.5
+WC tested up to: 5.0
+Stable tag: 2.4.1-dev
 License: GPLv3
 License URI: http://www.gnu.org/licenses/lgpl-3.0.html
 
@@ -152,6 +152,155 @@ This section describes how to install the plugin and get it working.
 7. The WooCommerce JTL-Connector (>=1.7.0) settings panel.
 
 == Changelog ==
+
+= 2.4.1-dev =
+* Info - Merged state with current release
+* Bugfix - Fixed invalid constant reference
+
+= 2.4.0-dev =
+* Info - Merged state with current release
+* Changed compatibility info to WooCommerce 5
+* Removed platform version from Connector identify call
+
+= 2.3.0-dev =
+* Info - Merged state with current release
+* Bugfix - CO-1335 - Fixed various bugs related to variable products
+* Bugfix - Fixed problems with quicksync and product stock sync
+
+= 2.2.0-dev =
+* Info - Merged state with current release
+* Bugfix - Fixed setProductType bug
+
+= 2.1.0-dev =
+* Info - Merged state with current release
+
+= 2.0.0-dev =
+* Enhancement - CO-307 - WPML implementation
+
+= 1.19.0 =
+* Bugfix - CO-1372 - fixed customer group update
+* Bugfix - CO-1343 - fixed cross-selling pull
+* Bugfix - CO-1338 - fixed sanitizing image name on push
+* Bugfix - CO-1337 - fixed paypal payment method mapping
+
+= 1.18.0 =
+* Changed compatibility info to WooCommerce 5
+* Removed platform version from Connector identify call
+
+= 1.17.0 =
+* Bugfix - CO-1254 - fixed empty values in Cross-Selling pull
+* Bugfix - CO-1274 - fixed parent images are attached to children
+* Bugfix - CO-1272 - fixed saving category slug when url path is empty
+* Bugfix - CO-1241 - fixed saving images with same name
+* Bugfix - CO-1304 - partially shiped orders have now status pending
+* Bugfix - CO-1261 - German Market: pay by invoice(kauf auf rechnung) orders are now unpaid
+* Enhancement - CO-1243 - allow saving html tags in attribute values
+* Info - WooCommerce compatibility updated to 4.8, Wordpress compatibility updated to 5.6
+
+= 1.16.1 =
+* Bugfix - fresh installation process missing token
+
+= 1.16.0 =
+* Entchancement - Unified connector config to database config, removed all items except developer logging from config.json file
+* Bugfix - CO-1240 - Fixed vat calculation comparing values
+* Bugfix - CO-1239 - Fixed price transfer precision, price gross item is now rounded at pull
+* Bugfix - CO-1221 - Fixed 'not all images were sent' error
+
+= 1.15.2 =
+* Bugfix - CO-1213 - Delete product image if not used
+* Bugfix - CO-1193 - Fixed tax id import
+
+= 1.15.1 =
+* Entchancement - Fixed tax rate calculation
+
+= 1.15.0 =
+* Entchancement - Product price refactoring, unified normal and quick sync calls to one method
+* Bugfix - Fixed setting bulk prices
+* Bugfix - Fixed setting standard price when B2B Market is active
+* Bugfix - Reverted transfer priceGross on customer order pull, set item price precision to minimum of 4
+* Bugfix - Increased tax rate calculation precision to 4
+* Bugfix - CO-1161 - DHL postnumber is now correctly transfered
+* Bugfix - CO-1174 - Customer group can be changed on customer update
+
+= 1.14.2 =
+* Bugfix - Price decimal precision increased to minimum of 4
+
+= 1.14.1 =
+* Bugfix - Price quicksync set price to 0
+
+= 1.14.0 =
+* Bugfix - CO-1175 - Fixed split tax on shipping when there are two or more tax rates
+* Enhancement - CO-1139 - Product/Category with special in name is now correctly imported
+* Enhancement - CO-1045 - Allow to change price import precision. Setting is basing on WooCommerce decimal prices setting for frontend
+* Bugfix - CO-982 - RRP/UVP price in B2B market is not set correctly
+
+= 1.13.1 =
+* Bugfix - CO-1160 - Removed deprecated PHP function call get_magic_quotes_gpc()
+
+= 1.13.0 =
+* Bugfix - CO-1134 - Invalid customer group id sent on pull
+* Bugfix - CO-1133 delete transients after quicksync
+
+= 1.12.0 =
+* Info - removed setPriceGross in CustomerOrderItem
+* Info - removed setTotalSumGross in CustomerOrder
+* Info - removed minimum price decimals condition in CustomerOrderItem
+* Info - removed price cutting in CustomerOrder
+* Enhancement - Vat calculations improvements, it's calculated basing directly on priceNet and priceGross
+* Enhancement - Added option to recalculate order before pull when order has coupons
+* Enhancement - Added possibility to transfer product type in the attribute 'wc_product_type' but type need to exist in WooCommerce
+
+= 1.11.1 =
+* Bugfix - Paypal Plus PUI auto loading fix
+
+= 1.11.0 =
+* Bugfix - Invalid manufacturer query when deleting image
+* Enhancement - CO-984 - Pull payment only if order is linked
+* Enhancement - CO-1067 - Added support for Paypal Plus PUI
+* Bugfix - CO-898 - Image alt is no more set as tmp filename when not present
+* Bugfix - CO-1109 - Added exception when default customer group is not set in connector settings
+
+= 1.10.0 =
+* Enhancement - CO-1086 - Changed supplier delivery time to handling time method
+* Enhancement - CO-1049 - Added compatibility for plugin name change Perfect Brands for WooCommerce
+
+= 1.9.5 =
+* Bugfix - Reverted changes related to rounding vat on item from version 1.9.4
+* Bugfix - Fixed typo in DeliveryNote controller
+* Enhancement - CO-979 - Added delivery time support for Germanized plugin
+* Enhancement - CO-965 - Added fallback when shipping vat rate is 0 then vat rate is the highest rate from products
+
+= 1.9.4 =
+* Enhancement - CO-991 - If there is exactly one 'tax' order item type in order, rate_percent from it will be used instead of calculating vat rate manually
+* Enhancement - Item price gross is now used without rounding for manually vat calculation
+* Bugfix - Increased vat value precision to 2 digits when it's manually calculated
+* Enhancement - CO-955 - iframe tag in description is now correctly saved
+
+= 1.9.3 =
+* Enhancement - Added default value for 'dhl_wunschpaket_neighbour_address_addition' attribute in format: {shipping address zipcode} {shipping address city}
+* Bugfix - CO-981 - Fixed saving meta fields from B2B market cause variable product type was switched to simple
+* Bugfix - CO-975 - DHL Wunschpaket: Added default salutation 'Herr' if no salutation is present
+* Bugfix - CO-855 - Fixed connector setting: 'Abgeschlossene Bestellungen importieren' doesnt't work
+
+= 1.9.2 =
+* Bugfix - Stock level doubled when canceling order, added 'woocommerce_can_restore_order_stock' in status_change.push to prevent
+* Bugfix - fixed manufacturer image linking, added missing condition
+
+= 1.9.1 =
+* Enhancement - CO-931 - Added support for VR pay eCommerce - WooCommerce plugin
+* Enhancement - added backup plugins compatibility: BackupBuddy, UpdraftPlus - Backup/Restore
+* Info - marked BackWPup as incompatible plugin
+
+= 1.9.0 =
+* Enhancement - CO-915 - Added compatibility with WooCommerce 4
+* Minor fixes related to code inspections
+* Removed stripslashes_deep call on super globals
+
+= 1.8.5 =
+* Increased minimum PHP version to 7.1.3
+* Increased versions tested up to WooCommerce: 3.9 and Wordpress: 5.3
+* Fix - CO-862 - VAT ID on customer is not always set
+* Fix - CO-707 - Unified tax rates in global data pull
 
 = 1.8.4 =
 * Fix - DHL for Woocommerce invalid argument fix

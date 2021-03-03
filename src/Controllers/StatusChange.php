@@ -14,18 +14,36 @@ class StatusChange extends BaseController
 {
     use PushTrait;
 
+    /**
+     * @param StatusChangeModel $statusChange
+     * @return StatusChangeModel
+     */
     public function pushData(StatusChangeModel $statusChange)
     {
         $order = \wc_get_order($statusChange->getCustomerOrderId()->getEndpoint());
 
         if ($order instanceof \WC_Order) {
-            $order->set_status($this->mapStatus($statusChange));
-            $order->save();
+
+            if ($statusChange->getOrderStatus() === CustomerOrder::STATUS_CANCELLED) {
+                add_filter('woocommerce_can_restore_order_stock', function ($true, $order) {
+                    return false;
+                }, 10, 2);
+            }
+
+            $newStatus = $this->mapStatus($statusChange);
+            if ($newStatus !== null) {
+                $order->set_status($newStatus);
+                $order->save();
+            }
         }
 
         return $statusChange;
     }
 
+    /**
+     * @param StatusChangeModel $statusChange
+     * @return string|null
+     */
     private function mapStatus(StatusChangeModel $statusChange)
     {
         if ($statusChange->getOrderStatus() === CustomerOrder::STATUS_CANCELLED) {
@@ -42,6 +60,8 @@ class StatusChange extends BaseController
             }
 
             return 'wc-on-hold';
+        } elseif ($statusChange->getOrderStatus() === CustomerOrder::STATUS_PARTIALLY_SHIPPED) {
+            return 'wc-processing';
         }
 
         return null;

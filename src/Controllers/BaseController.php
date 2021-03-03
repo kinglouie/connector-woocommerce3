@@ -12,23 +12,39 @@ use jtl\Connector\Core\Model\DataModel;
 use jtl\Connector\Core\Model\QueryFilter;
 use jtl\Connector\Model\Statistic;
 use jtl\Connector\Result\Action;
+use JtlWooCommerceConnector\Integrations\IntegrationsManager;
+use JtlWooCommerceConnector\Integrations\Plugins\PluginInterface;
+use JtlWooCommerceConnector\Integrations\Plugins\PluginsManager;
+use JtlWooCommerceConnector\Integrations\Plugins\Wpml\Wpml;
 use JtlWooCommerceConnector\Traits\BaseControllerTrait;
 use JtlWooCommerceConnector\Utilities\Db;
+use JtlWooCommerceConnector\Utilities\SupportedPlugins;
 use ReflectionClass;
 
 abstract class BaseController extends Controller
 {
     use BaseControllerTrait;
-    
+
     /**
      * @var Db
      */
     protected $database;
+
     /**
      * @var string
      */
     protected $controllerName;
-    
+
+    /**
+     * @var PluginsManager
+     */
+    protected $pluginsManager;
+
+    /**
+     * @var Wpml
+     */
+    protected $wpml;
+
     /**
      * BaseController constructor.
      */
@@ -36,6 +52,11 @@ abstract class BaseController extends Controller
     {
         parent::__construct();
         $this->database = Db::getInstance();
+
+        $integrationsManager = new IntegrationsManager($this->database);
+        $this->pluginsManager = $integrationsManager->getPluginsManager();
+        $this->wpml = $this->pluginsManager->get(Wpml::class);
+
         try {
             $reflect = new ReflectionClass($this);
             $shortName = $reflect->getShortName();
@@ -44,7 +65,15 @@ abstract class BaseController extends Controller
             //
         }
     }
-    
+
+    /**
+     * @return PluginsManager
+     */
+    protected function getPluginsManager(): PluginsManager
+    {
+        return $this->pluginsManager;
+    }
+
     /**
      * Method called on a pull request.
      *
@@ -55,22 +84,22 @@ abstract class BaseController extends Controller
     {
         $action = new Action();
         $action->setHandled(true);
-        
+
         try {
             $result = null;
-            
+
             if (method_exists($this, 'pullData')) {
                 $result = $this->pullData($query->getLimit());
             }
-            
+
             $action->setResult($result);
         } catch (\Exception $exc) {
             $this->handleException($exc, $action);
         }
-        
+
         return $action;
     }
-    
+
     /**
      * Method called on a push request.
      *
@@ -81,22 +110,22 @@ abstract class BaseController extends Controller
     {
         $action = new Action();
         $action->setHandled(true);
-        
+
         try {
             $result = null;
-            
+
             if (method_exists($this, 'pushData')) {
                 $result = $this->pushData($data);
             }
-            
+
             $action->setResult($result);
         } catch (\Exception $exc) {
             $this->handleException($exc, $action);
         }
-        
+
         return $action;
     }
-    
+
     /**
      * Method called on a delete request.
      *
@@ -107,20 +136,20 @@ abstract class BaseController extends Controller
     {
         $action = new Action();
         $action->setHandled(true);
-        
+
         try {
             $result = null;
-            
+
             if (method_exists($this, 'deleteData')) {
                 $action->setResult($this->deleteData($data));
             }
         } catch (\Exception $exc) {
             $this->handleException($exc, $action);
         }
-        
+
         return $action;
     }
-    
+
     /**
      * Method called on a statistic request.
      *
@@ -131,20 +160,20 @@ abstract class BaseController extends Controller
     {
         $action = new Action();
         $action->setHandled(true);
-        
+
         try {
             $statModel = new Statistic();
-            
+
             if (method_exists($this, 'getStats')) {
                 $statModel->setAvailable((int)$this->getStats());
             }
-            
+
             $statModel->setControllerName(lcfirst($this->controllerName));
             $action->setResult($statModel);
         } catch (\Exception $exc) {
             $this->handleException($exc, $action);
         }
-        
+
         return $action;
     }
 }

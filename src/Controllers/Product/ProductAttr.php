@@ -6,7 +6,6 @@
 
 namespace JtlWooCommerceConnector\Controllers\Product;
 
-use jtl\Connector\Model\Identity;
 use jtl\Connector\Model\Product as ProductModel;
 use jtl\Connector\Model\ProductAttr as ProductAttrModel;
 use jtl\Connector\Model\ProductAttrI18n as ProductAttrI18nModel;
@@ -18,24 +17,6 @@ use JtlWooCommerceConnector\Utilities\Util;
 
 class ProductAttr extends BaseController
 {
-    // <editor-fold defaultstate="collapsed" desc="Pull">
-    public function pullData(
-        \WC_Product $product,
-        \WC_Product_Attribute $attribute,
-        $slug,
-        $languageIso
-    ) {
-        return $this->buildAttribute(
-            $product,
-            $attribute,
-            $slug,
-            $languageIso
-        );
-    }
-    // </editor-fold>
-    
-    // <editor-fold defaultstate="collapsed" desc="Push">
-    
     /**
      * @param              $productId
      * @param              $pushedAttributes
@@ -48,9 +29,9 @@ class ProductAttr extends BaseController
         $productId,
         $pushedAttributes,
         $attributesFilteredVariationsAndSpecifics,
-        ProductModel $product
+        ProductModel $product,
+        $wawiLanguageIso
     ) {
-        //  $parent = (new ProductVariationSpecificAttribute);
         //FUNCTION ATTRIBUTES BY JTL
         $virtual = false;
         $downloadable = false;
@@ -69,7 +50,7 @@ class ProductAttr extends BaseController
         /** @var  ProductAttrModel $pushedAttribute */
         foreach ($pushedAttributes as $key => $pushedAttribute) {
             foreach ($pushedAttribute->getI18ns() as $i18n) {
-                if (!Util::getInstance()->isWooCommerceLanguage($i18n->getLanguageISO())) {
+                if ($wawiLanguageIso !== $i18n->getLanguageISO()) {
                     continue;
                 }
                 
@@ -101,25 +82,6 @@ class ProductAttr extends BaseController
                             }
                             $fbStatusCode = true;
                         }
-                        
-                        /* if (strcmp($attrName, self::FACEBOOK_VISIBILITY_ATTR) === 0) {
-                             $value = strcmp(trim($i18n->getValue()), 'true') === 0;
-                             $value = $value ? '1' : '0';
-                             
-                             if (!add_post_meta(
-                                 $productId,
-                                 substr($attrName, 3),
-                                 $value,
-                                 true
-                             )) {
-                                 update_post_meta(
-                                     $productId,
-                                     substr($attrName, 3),
-                                     $value
-                                 );
-                             }
-                             $fbVisibility = true;
-                         }*/
                     }
                     if(SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZED2)){
                         if($i18n->getName() === ProductVaSpeAttrHandler::GZD_IS_SERVICE) {
@@ -500,21 +462,6 @@ class ProductAttr extends BaseController
                     );
                 }
             }
-            
-            /*if (!$fbVisibility) {
-                if (!add_post_meta(
-                    $productId,
-                    substr(self::FACEBOOK_VISIBILITY_ATTR, 3),
-                    '1',
-                    true
-                )) {
-                    update_post_meta(
-                        $productId,
-                        substr(self::FACEBOOK_VISIBILITY_ATTR, 3),
-                        '1'
-                    );
-                }
-            }*/
         }
         
         if (!$payable) {
@@ -542,12 +489,12 @@ class ProductAttr extends BaseController
         /** @var ProductAttrModel $attribute */
         foreach ($pushedAttributes as $attribute) {
             $result = null;
-            if (!(bool)Config::get(JtlConnectorAdmin::OPTIONS_SEND_CUSTOM_PROPERTIES) && $attribute->getIsCustomProperty() === true) {
+            if (!(bool)Config::get(Config::OPTIONS_SEND_CUSTOM_PROPERTIES) && $attribute->getIsCustomProperty() === true) {
                 continue;
             }
             
             foreach ($attribute->getI18ns() as $i18n) {
-                if (!Util::getInstance()->isWooCommerceLanguage($i18n->getLanguageISO())) {
+                if ($wawiLanguageIso !== $i18n->getLanguageISO()) {
                     continue;
                 }
                 
@@ -558,48 +505,17 @@ class ProductAttr extends BaseController
         
         return $attributesFilteredVariationsAndSpecifics;
     }
-    
-    // </editor-fold>
-    
-    // <editor-fold defaultstate="collapsed" desc="Methods">
-    /**
-     * @param \WC_Product           $product
-     * @param \WC_Product_Attribute $attribute
-     * @param                       $slug
-     * @param string                $languageIso
-     *
-     * @return ProductAttrModel
-     */
-    private function buildAttribute(
-        \WC_Product $product,
-        \WC_Product_Attribute $attribute,
-        $slug,
-        $languageIso
-    ) {
-        $productAttribute = $product->get_attribute($attribute->get_name());
-        $isTax = $attribute->is_taxonomy();
-        
-        // Divided by |
-        $values = explode(WC_DELIMITER, $productAttribute);
-        
-        $i18n = (new ProductAttrI18nModel)
-            ->setProductAttrId(new Identity($slug))
-            ->setName($attribute->get_name())
-            ->setValue(implode(', ', $values))
-            ->setLanguageISO($languageIso);
-        
-        return (new ProductAttrModel)
-            ->setId($i18n->getProductAttrId())
-            ->setProductId(new Identity($product->get_id()))
-            ->setIsCustomProperty($isTax)
-            ->addI18n($i18n);
-    }
-    
+
     private function saveAttribute(ProductAttrModel $attribute, ProductAttrI18nModel $i18n, array &$attributes)
     {
+        $value = $i18n->getValue();
+        if ((bool)Config::get(Config::OPTIONS_ALLOW_HTML_IN_PRODUCT_ATTRIBUTES, false) === false) {
+            $value = \wc_clean($i18n->getValue());
+        }
+
         $this->addNewAttributeOrEditExisting($i18n, [
             'name'             => \wc_clean($i18n->getName()),
-            'value'            => \wc_clean($i18n->getValue()),
+            'value'            => $value,
             'isCustomProperty' => $attribute->getIsCustomProperty(),
         ], $attributes);
     }
@@ -633,5 +549,4 @@ class ProductAttr extends BaseController
             'is_taxonomy'  => 0,
         ];
     }
-    // </editor-fold>
 }

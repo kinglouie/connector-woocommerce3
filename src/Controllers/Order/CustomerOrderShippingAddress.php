@@ -32,17 +32,17 @@ class CustomerOrderShippingAddress extends BaseController
                 ? $order->get_customer_id()
                 : Id::link([Id::GUEST_PREFIX, $order->get_id()])));
 
-        if (SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZED)
-            || SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZED2)
-            || SupportedPlugins::isActive(SupportedPlugins::PLUGIN_WOOCOMMERCE_GERMANIZEDPRO)
-        ) {
+        if ($this->getPluginsManager()->get(\JtlWooCommerceConnector\Integrations\Plugins\Germanized\Germanized::class)->canBeUsed()) {
             $index = \get_post_meta($order->get_id(), '_shipping_title', true);
             $address->setSalutation(Germanized::getInstance()->parseIndexToSalutation($index));
 
-            $parcel = \get_post_meta($order->get_id(), '_shipping_parcelshop_post_number', true);
+            $postNumber = \get_post_meta($order->get_id(), '_shipping_parcelshop_post_number', true);
+            if (empty($postNumber)) {
+                $postNumber = $order->get_meta('_shipping_dhl_postnumber', true);
+            }
 
-            if (!empty($parcel)) {
-                $address->setExtraAddressLine($parcel);
+            if (!empty($postNumber)) {
+                $address->setExtraAddressLine((string) $postNumber);
             }
         }
 
